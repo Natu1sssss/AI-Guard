@@ -1,4 +1,4 @@
-# AIGard
+# AIGard (so far in beta, if you have any problems, please write, I will be only glad to improve the program)
 
 AI-generated content detection system using hybrid analysis combining local heuristics and Mistral AI.
 
