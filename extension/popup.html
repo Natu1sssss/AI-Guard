@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #333;
+    }
+    .header h1 { font-size: 18px; font-weight: 600; color: #00d4ff; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #888;
+      margin-left: auto;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .status-dot.online { background: #00ff88; }
+    .status-dot.offline { background: #ff4444; }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      flex: 1;
+      padding: 8px;
+      background: #252540;
+      border: none;
+      border-radius: 6px;
+      color: #888;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .tab.active { background: #00d4ff; color: #000; }
+    .tab:hover:not(.active) { background: #333; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      background: #252540;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #eee;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+    textarea:focus { outline: none; border-color: #00d4ff; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #00d4ff;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: #00b8e6; }
+    .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+    .progress-container { margin: 12px 0; display: none; }
+    .progress-container.show { display: block; }
+    .progress-bar { height: 4px; background: #333; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #00d4ff; width: 0%; transition: width 0.3s; }
+    .progress-text { font-size: 12px; color: #888; margin-top: 6px; text-align: center; }
+    .result { margin-top: 16px; padding: 16px; background: #252540; border-radius: 8px; display: none; }
+    .result.show { display: block; }
+    .score-display { text-align: center; margin-bottom: 16px; }
+    .score-value { font-size: 48px; font-weight: 700; }
+    .score-value.human { color: #00ff88; }
+    .score-value.mixed { color: #ffaa00; }
+    .score-value.ai { color: #ff4444; }
+    .score-label { font-size: 14px; color: #888; margin-top: 4px; }
+    .label-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-top: 8px; }
+    .label-badge.human { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    .label-badge.mixed { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+    .label-badge.ai { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+    .metrics { margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; }
+    .metric-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+    .metric-label { color: #888; }
+    .metric-value { color: #eee; }
+    .metric-divider { height: 1px; background: #444; margin: 8px 0; }
+    .explanation { margin-top: 12px; padding: 12px; background: #1a1a2e; border-radius: 6px; font-size: 12px; line-height: 1.5; color: #aaa; }
+    .phrases { margin-top: 12px; }
+    .phrases-title { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .phrase { display: inline-block; padding: 4px 8px; background: rgba(255, 68, 68, 0.15); border-radius: 4px; font-size: 11px; color: #ff6666; margin: 2px; }
+    .settings-group { margin-bottom: 16px; }
+    .settings-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .settings-input { width: 100%; padding: 10px; background: #252540; border: 1px solid #333; border-radius: 6px; color: #eee; font-size: 13px; }
+    .settings-input:focus { outline: none; border-color: #00d4ff; }
+    .error { padding: 12px; background: rgba(255, 68, 68, 0.15); border-radius: 6px; font-size: 12px; color: #ff6666; margin-top: 12px; display: none; }
+    .error.show { display: block; }
+    .info-box { padding: 12px; background: rgba(0, 212, 255, 0.1); border-radius: 6px; font-size: 12px; color: #00d4ff; margin-bottom: 12px; }
+    .info-box a { color: #00d4ff; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ AIGard</h1>
+    <div class="status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText"></span>
+    </div>
+  </div>
+  
+  <div class="tabs">
+    <button class="tab active" data-panel="analyze" id="tabAnalyze"></button>
+    <button class="tab" data-panel="settings" id="tabSettings"></button>
+  </div>
+  
+  <div id="analyze" class="panel active">
+    <textarea id="textInput"></textarea>
+    <button class="btn" id="analyzeBtn"></button>
+    
+    <div class="progress-container" id="progress">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText"></div>
+    </div>
+    
+    <div class="result" id="result">
+      <div class="score-display">
+        <div class="score-value" id="scoreValue">--</div>
+        <div class="score-label" id="scoreLabel"></div>
+        <span class="label-badge" id="labelBadge">--</span>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <div class="explanation" id="explanation"></div>
+      <div class="phrases" id="phrases"></div>
+    </div>
+    
+    <div class="error" id="error"></div>
+  </div>
+  
+  <div id="settings" class="panel">
+    <div class="info-box" id="infoBox"></div>
+    
+    <div class="settings-group">
+      <div class="settings-label" id="apiKeyLabel"></div>
+      <input type="password" class="settings-input" id="apiKey">
+    </div>
+    
+    <div class="settings-group">
+      <div class="settings-label" id="modelLabel"></div>
+      <select class="settings-input" id="model">
+        <option value="mistral-small-latest" id="optSmall"></option>
+        <option value="mistral-large-latest" id="optLarge"></option>
+      </select>
+    </div>
+    
+    <button class="btn" id="saveSettings"></button>
+  </div>
+  
+  <script src="analyzer.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
